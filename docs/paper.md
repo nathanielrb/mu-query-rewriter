@@ -3,17 +3,17 @@ title: SPARQL Query Transformation for Generalized Access Control
 author: Nathaniel Rudavsky-Brody
 ---
 
-# Motivation
+# Introduction
 
 `mu.semte.ch` is a platform for "building state-of-the-art web applications fuelled by Linked-Data aware microservices".[^mu] It has been used in production to build large systems...
 
 [^mu]: See Versteden and Pauwels, "State-of-the-art Web Applications using Microservices and Linked Data"... and http://mu.semte.ch
 
-One of the advantages of such a platform is the ability to reuse microservices between applications. However, reuse can become complicated when it must take into account different authorization models and database structures.
+One of the advantages of such a platform is the ability to reuse microservices between applications. However, reuse is complicated by the fact that different applications can use very different authorization models and graph structures.
 
-Here we propose a general solution to this problem, based on dynamic query transformation. The Mu Query Rewriter is a proxy service for enriching and constraining SPARQL queries before they are sent to the database. It allows for the abstract expression of complex authorization schemes, greatly simplifying what each microservice needs to know about database structure and access rules.
+Here we propose a general solution to this problem, based on dynamic query transformation. The Mu Query Rewriter is a proxy service for enriching and constraining SPARQL queries before they are sent to the database. It allows for the abstract expression of complex authorization schemes, greatly simplifying what each microservice needs to know about graph structure and access rules.
 
-Furthermore, it provides a system of query annotations to facilitate integration with the Mu Cache, allowing authorization-aware caching and cache-clearing.
+Furthermore, it provides a system of query annotations to facilitate integration with the Mu Cache, `mu.semte.ch`'s flexible cache service, allowing authorization-aware caching and cache-clearing.
 
 # Basic Architecture
 
@@ -94,7 +94,7 @@ The query transformation process ...
 -- optimization
 -- optimizations
 
-# Mu Cache Integration
+# Annotations and Mu Cache Integration
 
 The Mu Query Rewriter 
 
