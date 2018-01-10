@@ -1,11 +1,12 @@
 ---
-title: SPARQL Query Transformation for Generalized Access Control
+title: SPARQL Query Transformation for Graph-based Access Control
 author: Nathaniel Rudavsky-Brody
+abstract: In a microservice-based architecture, reuse can be complicated by the fact that different applications might use different access rules and authorization schemes. In the context of Linked Data applications, we propose a technique for abstracting access rules via SPARQL query transformation, so that access rights can be modeled in the database and individual microservices can remain authorization-agnostic.
 ---
 
 # Introduction
 
-`mu.semte.ch` is a platform for "building state-of-the-art web applications fuelled by Linked-Data aware microservices".[^mu] It has been successfully used in production to build large systems...
+`mu.semte.ch` is a platform for "building state-of-the-art web applications fueled by Linked-Data aware microservices".[^mu] It has been successfully used in production to build complex applications.
 
 [^mu]: See Versteden and Pauwels, "State-of-the-art Web Applications using Microservices and Linked Data"... and http://mu.semte.ch
 
@@ -17,71 +18,45 @@ Furthermore, it provides a system of query annotations to facilitate integration
 
 # Basic Architecture
 
-The Mu Query Rewriter runs as a proxy service in front of the database, handling SPARQL queries sent by the application's microservices. These microservices are expected to pass on the HTTP `mu-session-id` header provided by the Mu Identifier; this header, in conjunction with a log-in service, identifies the URI of the current user.
+The Mu Query Rewriter runs as a proxy service in front of the database, handling SPARQL queries sent by the application's microservices. These microservices are expected to pass on the HTTP `mu-session-id` header provided by the Mu Identifier[^muid] which, in conjunction with a log-in service, identifies the URI of the current user.
 
-Conceptually speaking, the access rules are expressed as a dynamic *constraint* expressed in standard SPARQL, namely as a `CONSTRUCT` query. The constraint is thought of as constructing an intermediate *constraint graph* on which incoming SPARQL queries are run. Since the constraint can depend on `mu-session-id` header, the constraint graph will be different for each user.
+[^muid]: https://github.com/mu-semtech/mu-identifier
+
+Conceptually speaking, the access rules are expressed as a dynamic *constraint* expressed in standard SPARQL, namely as a `CONSTRUCT` query. The constraint is thought of as constructing an intermediate *constraint graph* on which incoming SPARQL queries are run. Since the constraint can depend on `mu-session-id` header, the constraint graph will be different for each user, and represents a hypothetical personal graph which that user is authorized to read and/or update.
 
 In practice, an incoming query is optimally rewritten to a form which, when run against the full database, is equivalent to the original query being run against the constraint graph. The result is effectively run against the subset of data which the current user has permission to query or update. 
 
 ![](../rewriter.png)
 
-In the following example, the constraint defines a model where bikes and cars are stored in separate graphs, and users can be authorized to see one or both of the types. rdf:type is declared as a "functional property" (see below).
+As a simple example, here is a constraint describing a database where triples whose subject have type `<Car>` are stored in the `<cars>` graph, and similarly `<Bike>`s in the `<bikes>` graph. The `<auth>` graph contains triples specifying which users are authorized to see which types. The placeholder `<SESSION>` is dynamically replaced with the `mu-session-id` header. (`rdf:type` is declared as a "functional property", defined see below). To save space, prefixe declarations are omitted.
 
-As a simple example, here is a constraint describing a database where triples whose subject have type `<Car>` are stored in the `<cars>` graph, and `<Bike>`s in the `<bikes>` graph. The `<auth>` graph contains triples specifying which users are authorized to see which types. The placeholder `<SESSION>` is dynamically replaced with the `mu-session-id` header.
+\small
 
-```
-PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
++--------------------------------+---------------------------+--------------------------------------+
+| Constraint                     | Query                     | Rewritten Query                      |
++================================+===========================+======================================+
+| ```                            | ```                       | ```                                  |
+| CONSTRUCT {                    | SELECT *                  | SELECT ?s ?color                     |
+|   ?a ?b ?c                     | WHERE {                   | WHERE {                              |
+| }                              |   ?s a <Bike>;            |   GRAPH ?graph23694 {                |
+| WHERE {                        |      <hasColor> ?color.   |       ?s a <Bike>;                   |  
+|   GRAPH ?graph {               | }                         |          <hasColor> ?color.          |
+|    ?a ?b ?c;                   | ```                       |    }                                 |
+|       a ?type                  |                           |   GRAPH <auth> {                     |
+|   }                            |                           |    <session123456> mu:account ?user. |
+|   GRAPH <auth> {               |                           |    ?user <authFor> <Bike>            |
+|    <SESSION> mu:account ?user. |                           |   }                                  |
+|    ?user <authFor> ?type       |                           |   VALUES (?graph23694) { (<bikes>) } |
+|   }                            |                           | }                                    |
+|   VALUES (?graph ?type){       |                           | ```                                  |
+|     (<cars> <Car>)             |                           |                                      |
+|     (<bikes> <Bike>)           |                           |                                      |
+|   }                            |                           |                                      |
+| }                              |                           |                                      |
+| ```                            |                           |                                      |
++--------------------------------+---------------------------+--------------------------------------+
 
-CONSTRUCT {
-  ?a ?b ?c
-}
-WHERE {
-  GRAPH ?graph {
-   ?a ?b ?c;
-      a ?type
-  }
-  GRAPH <auth> {
-   <SESSION> mu:account ?user.
-   ?user <authFor> ?type
-  }
-  VALUES (?graph ?type){
-    (<cars> <Car>)
-    (<bikes> <Bike>)
-  }
-}
-```
-
-When a microservice sends the a simple query like the following:
-
-```
-SELECT *
-WHERE {
-  ?s a <Bike>;
-     <hasColor> ?color.
-}
-```
-
-the Query Rewriter transforms it into a more complex query which is run against the database:
-
-```
-PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
-
-SELECT ?s ?color
-WHERE {
-  GRAPH ?graph23694 {
-    ?s a <Bike>;
-       <hasColor> ?color.
-  }
-  GRAPH <auth> {
-   <session123456> mu:account ?user.
-   ?user <authFor> <Bike>
-  }
-  VALUES (?graph23694) { (<bikes>) }
-}
-```
-
-The results are returned to the microservice.
-
+\normalsize
 
 # Constraint Transformation
 
