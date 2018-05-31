@@ -234,11 +234,7 @@ Unique variables are only rewritten once for the whole query, regardless of depe
 
 Functional properties are unique, and if a subject has two values for a functional property in the same block, an error is signaled. When `QUERY_FUNCTIONAL_PROPERTIES` is "true", functional properties are queried in the database for known subjects.
 
-Queried properties are like functional properties but without the uniqueness restriction. For known subjects and objects, the triple is verified against the database:
-
-```
-<person123> ex:queriedProp <someval>
-```
+Queried properties are like functional properties but without the uniqueness restriction. For known subjects and objects, the triple is verified against the database.
 
 ## Annotations
 
