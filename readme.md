@@ -10,7 +10,7 @@ A basic working example and testing environment is provided by https://github.co
 
 A constraint is expressed as a standard SPARQL `CONSTRUCT` query, which conceptually represents an intermediate 'constraint' graph. An incoming query is optimally rewritten to a form which, when run against the full database, is equivalent to the original query being run against the constraint graph. Constraining queries in this way allows shared logic to be abstracted almost to the database level, simplifying the logic handled by each microservice. 
 
-![rewriter diagram](rewriter.png)
+![rewriter diagram](Mu-Query-Rewriter.png)
 
 The main use case is modeling access rights directly in the data, so that an incoming query is effectively run against the subset of data which the current user has permission to query or update. Using Annotations (see below), the Rewriter can return authorization-aware cache-keys and clear-keys to the mu-cache. When access rights can be fully resolved at rewrite-time (using functional properties and intermediate queries, see below), the rewriter can return an error signaling no access. When access can only be resolved in the database, an unauthorized query will return the empty set.
 
