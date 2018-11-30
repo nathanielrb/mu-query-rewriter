@@ -94,33 +94,15 @@
                       (log-message "~%==Annotations== [~A]  ~%~A~% " (logkey) annotations)
                       (log-message "~%==Queried Annotations== [~A]  ~%~A~% " (logkey) queried-annotations)
 
-                (let ((headers (append (headers->list (response-headers response))
-                                       (if (*calculate-annotations?*)
-                                           `((mu-cache-annotations
-                                              ,(if annotations
-                                                   (string-join
-                                                    (map (lambda (annotation)
-                                                           (if (pair? annotation)
-                                                               (string-join (map ->string 
-                                                                                 (filter (compose not sparql-variable?) 
-                                                                                         (flatten annotation))))
-                                                               (->string annotation)))
-                                                         annotations)
-                                                    ",")
-                                                   ""))
-                                             ,@(if queried-annotations
-                                                   `((mu-queried-cache-annotations
-                                                     ,(string-join
-                                                       (map (lambda (pair)
-                                                              (string-join (map ->string pair)))
-                                                            queried-annotations)
-                                                       ",")))
-                                                   '()))
-                                           '()))))
-                  (log-message "~%==Results== [~A] ~%~A~%" 
-                               (logkey) (substring result 0 (min 1500 (string-length result))))
-                  (mu-headers headers)
-                  result)))))))        )))
+                      (let ((headers (append (headers->list (response-headers response)) 
+                                             (if (*calculate-annotations?*)
+                                                 `((mu-auth-allowed-groups ,(format-annotations-header annotations))
+                                                   (mu-auth-used-groups ,(format-annotations-header queried-annotations)))
+                                                 '()))))
+                        (log-message "~%==Results== [~A] ~%~A~%" 
+                                     (logkey) (substring result 0 (min 1500 (string-length result))))
+                        (mu-headers headers)
+                        result))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Call Specification

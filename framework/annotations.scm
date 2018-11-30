@@ -156,3 +156,16 @@
     ((LIMIT OFFSET |GROUP BY|) . ,rw/remove)
     (,select? . ,rw/remove)))
 
+(define (format-annotations-header annotations)
+  (if annotations
+      (json->string
+        (list->vector
+         (map (lambda (annotation)
+                (let ((annotation (if (pair? annotation) annotation
+                                      `(group ,annotation))))
+                  `((name . ,(->string (car annotation)))
+                    (value . ,(let ((val (cadr annotation)))
+                                (if (sparql-variable? val) #t
+                                    (->string val)))))))
+              annotations)))
+      ""))

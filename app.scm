@@ -11,17 +11,15 @@
 ;;   (syntax-rules ()
 ;;     ((_ path) (include path))))
 
-
-
 (include "framework/macros.scm")
 
 (include "framework/settings.scm")
 
 (include "framework/rw.scm") ; factor up to s-sparql
 
- (include "framework/sparql-logic.scm")
+(include "framework/sparql-logic.scm")
 
- (include "framework/annotations.scm")  
+(include "framework/annotations.scm")  
 
 (include "framework/utility-transformations.scm")
 
